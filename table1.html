@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Smart Energy History</title>
+  <style>
+    body { font-family: Arial; background: #f9f9f9; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 8px 12px; border: 1px solid #ccc; text-align: center; }
+    th { background-color: #4CAF50; color: white; }
+    h2 { color: #333; }
+  </style>
+</head>
+<body>
+  <h2>Energy Consumption History</h2>
+  <table id="historyTable">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Voltage (V)</th>
+        <th>Current (A)</th>
+        <th>Power (W)</th>
+        <th>Energy (Wh)</th>
+        <th>Temp (°C)</th>
+        <th>Humidity (%)</th>
+        <th>Motion</th>
+        <th>Hour</th>
+        <th>Mode</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const dbUrl = "https://fypproject-794c8-default-rtdb.asia-southeast1.firebasedatabase.app/history.json";
+
+    fetch(dbUrl)
+      .then(res => res.json())
+      .then(data => {
+        const tbody = document.querySelector('#historyTable tbody');
+
+        if (!data) {
+          tbody.innerHTML = '<tr><td colspan="10">No history data found.</td></tr>';
+          return;
+        }
+
+        const entries = Object.entries(data).sort(); // sort by timestamp
+        entries.forEach(([timestamp, values]) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${timestamp.replace(/_/g, ' ')}</td>
+            <td>${values.voltage || 0}</td>
+            <td>${values.current || 0}</td>
+            <td>${values.power || 0}</td>
+            <td>${values.energy || 0}</td>
+            <td>${values.temperature || '-'}</td>
+            <td>${values.humidity || '-'}</td>
+            <td>${values.motion ? 'Yes' : 'No'}</td>
+            <td>${values.hour}</td>
+            <td>${values.mode}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      })
+      .catch(err => {
+        console.error("Failed to load history data", err);
+        document.querySelector('#historyTable tbody').innerHTML = 
+          `<tr><td colspan="10">Error loading data.</td></tr>`;
+      });
+  </script>
+</body>
+</html>

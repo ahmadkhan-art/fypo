@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Energy Monitoring - Graphs</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 40px;
+    }
+
+    .chart-container {
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 40px;
+    }
+
+    canvas {
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Smart Electrical Energy Monitoring</h1>
+
+  <div class="chart-container">
+    <h2>Voltage (V)</h2>
+    <canvas id="voltageChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h2>Current (A)</h2>
+    <canvas id="currentChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h2>Power (W)</h2>
+    <canvas id="powerChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h2>Temperature (°C)</h2>
+    <canvas id="temperatureChart"></canvas>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    const firebaseURL = "https://fypproject-794c8-default-rtdb.asia-southeast1.firebasedatabase.app/history.json";
+
+    fetch(firebaseURL)
+      .then(res => res.json())
+      .then(data => {
+        if (!data) {
+          alert("No data found in Firebase.");
+          return;
+        }
+
+        const labels = [];
+        const voltage = [], current = [], power = [], temperature = [];
+
+        Object.entries(data).sort().forEach(([timestamp, entry]) => {
+          labels.push(timestamp.replace(/_/g, ' '));
+          voltage.push(entry.voltage || 0);
+          current.push(entry.current || 0);
+          power.push(entry.power || 0);
+          temperature.push(entry.temperature || 0);
+        });
+
+        function createChart(id, label, dataset, color) {
+          const ctx = document.getElementById(id).getContext("2d");
+          new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: labels,
+              datasets: [{
+                label: label,
+                data: dataset,
+                borderColor: color,
+                backgroundColor: "transparent",
+                tension: 0.3,
+                pointRadius: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              aspectRatio: 16 / 10,
+              scales: {
+                x: {
+                  title: { display: true, text: "Time" },
+                  ticks: { maxRotation: 90, minRotation: 45, autoSkip: true, maxTicksLimit: 20 }
+                },
+                y: {
+                  beginAtZero: true,
+                  title: { display: true, text: label }
+                }
+              },
+              plugins: {
+                legend: { display: false }
+              }
+            }
+          });
+        }
+
+        createChart("voltageChart", "Voltage (V)", voltage, "red");
+        createChart("currentChart", "Current (A)", current, "blue");
+        createChart("powerChart", "Power (W)", power, "green");
+        createChart("temperatureChart", "Temperature (°C)", temperature, "orange");
+      })
+      .catch(err => {
+        console.error("Firebase fetch error:", err);
+        alert("Failed to fetch data.");
+      });
+  </script>
+
+</body>
+</html>

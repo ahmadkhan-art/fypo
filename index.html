@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Energy Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #c8e6c9, #f8bbd0);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin: 20px 0;
+      color: #333;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      width: 95%;
+      max-width: 1200px;
+    }
+
+    .card {
+      background: #e1bee7;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      text-align: center;
+    }
+
+    .card h3 {
+      margin-top: 0;
+      color: #4a148c;
+    }
+
+    .value {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: #6a1b9a;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      flex: 1 1 40%;
+      padding: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background-color: #8e24aa;
+      color: white;
+      transition: background-color 0.3s;
+    }
+
+    .btn.active {
+      background-color: #00c853;
+    }
+
+    .mode-toggle {
+      margin-top: 10px;
+    }
+
+    select {
+      padding: 10px;
+      font-size: 1em;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #8e24aa;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Smart Energy Dashboard</h1>
+
+<div class="dashboard">
+  <div class="card"><h3>Voltage</h3><div class="value" id="voltage">-- V</div></div>
+  <div class="card"><h3>Current</h3><div class="value" id="current">-- A</div></div>
+  <div class="card"><h3>Power</h3><div class="value" id="power">-- W</div></div>
+  <div class="card"><h3>Energy</h3><div class="value" id="energy">-- Wh</div></div>
+  <div class="card"><h3>Temperature</h3><div class="value" id="temperature">-- °C</div></div>
+  <div class="card"><h3>Humidity</h3><div class="value" id="humidity">-- %</div></div>
+  <div class="card"><h3>Mode</h3><div class="value" id="mode">--</div></div>
+
+  <div class="card mode-toggle">
+    <h3>Set Mode</h3>
+    <select id="modeSelect">
+      <option value="auto">Auto</option>
+      <option value="manual">Manual</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <h3>Control Devices</h3>
+    <div class="btn-group">
+      <button class="btn" id="fanBtn">Fan</button>
+      <button class="btn" id="heaterBtn">Heater</button>
+      <button class="btn" id="lightBtn">Light</button>
+      <button class="btn" id="computerBtn">Computer</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Data Pages</h3>
+    <div class="btn-group">
+      <button class="btn" onclick="window.open('table1.html', '_blank')">Table 1</button>
+      <button class="btn" onclick="window.open('table2.html', '_blank')">Table 2</button>
+      <button class="btn" onclick="window.open('graph3.html', '_blank')">Graph View</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyD_u2Ak5fnXuP2Sbqd6cjtihcc8-w58Zd4",
+    authDomain: "fypproject-794c8.firebaseapp.com",
+    databaseURL: "https://fypproject-794c8-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    projectId: "fypproject-794c8",
+    storageBucket: "fypproject-794c8.appspot.com"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // Read /sensor data
+  db.ref("/sensor").on("value", snapshot => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    document.getElementById("voltage").innerText = data.voltage + " V";
+    document.getElementById("current").innerText = data.current + " A";
+    document.getElementById("power").innerText = data.power + " W";
+    document.getElementById("energy").innerText = data.energy + " Wh";
+    document.getElementById("temperature").innerText = data.temperature + " °C";
+    document.getElementById("humidity").innerText = data.humidity + " %";
+    document.getElementById("mode").innerText = data.mode;
+    document.getElementById("modeSelect").value = data.mode;
+  });
+
+  // Update mode
+  document.getElementById("modeSelect").addEventListener("change", (e) => {
+    const selectedMode = e.target.value;
+    db.ref("/control/mode").set(selectedMode);
+    document.getElementById("mode").innerText = selectedMode;
+  });
+
+  // Device toggle function
+  function toggleDevice(device, buttonId) {
+    const path = "/control/" + device;
+    const btn = document.getElementById(buttonId);
+
+    db.ref(path).once("value").then(snapshot => {
+      const current = snapshot.val() || false;
+      db.ref(path).set(!current);
+      btn.classList.toggle("active", !current);
+    });
+  }
+
+  // Button click events
+  document.getElementById("fanBtn").onclick = () => toggleDevice("fan", "fanBtn");
+  document.getElementById("heaterBtn").onclick = () => toggleDevice("heater", "heaterBtn");
+  document.getElementById("lightBtn").onclick = () => toggleDevice("light", "lightBtn");
+  document.getElementById("computerBtn").onclick = () => toggleDevice("computer", "computerBtn");
+</script>
+
+</body>
+</html>
