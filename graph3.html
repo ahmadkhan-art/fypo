@@ -54,6 +54,11 @@
     <canvas id="temperatureChart"></canvas>
   </div>
 
+  <div class="chart-container">
+    <h2>Energy (Wh)</h2>
+    <canvas id="energyChart"></canvas>
+  </div>
+
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -69,7 +74,7 @@
         }
 
         const labels = [];
-        const voltage = [], current = [], power = [], temperature = [];
+        const voltage = [], current = [], power = [], temperature = [], energy = [];
 
         Object.entries(data).sort().forEach(([timestamp, entry]) => {
           labels.push(timestamp.replace(/_/g, ' '));
@@ -77,6 +82,7 @@
           current.push(entry.current || 0);
           power.push(entry.power || 0);
           temperature.push(entry.temperature || 0);
+          energy.push(entry.energy || 0);
         });
 
         function createChart(id, label, dataset, color) {
@@ -100,10 +106,16 @@
               scales: {
                 x: {
                   title: { display: true, text: "Time" },
-                  ticks: { maxRotation: 90, minRotation: 45, autoSkip: true, maxTicksLimit: 20 }
+                  ticks: {
+                    maxRotation: 90,
+                    minRotation: 45,
+                    autoSkip: true,
+                    maxTicksLimit: 20
+                  }
                 },
                 y: {
                   beginAtZero: true,
+                  suggestedMax: Math.max(...dataset) * 1.1,
                   title: { display: true, text: label }
                 }
               },
@@ -118,6 +130,7 @@
         createChart("currentChart", "Current (A)", current, "blue");
         createChart("powerChart", "Power (W)", power, "green");
         createChart("temperatureChart", "Temperature (°C)", temperature, "orange");
+        createChart("energyChart", "Energy (Wh)", energy, "purple");
       })
       .catch(err => {
         console.error("Firebase fetch error:", err);
